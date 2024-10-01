@@ -24,6 +24,7 @@ public class MemberRepository {
         store.put(member.getId() , member);
         return member;
     }
+
      public Optional<Member> findByLoginId(String loginId){
          //List<Member> all = findAll();
         /* for (Member member : all) {
