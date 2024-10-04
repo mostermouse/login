@@ -12,6 +12,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.servlet.http.Cookie;
 
@@ -27,21 +28,21 @@ public class LoginController {
     private final SessionManager sessionManager;
 
     @GetMapping("/login")
-    public String loginForm(@ModelAttribute("loginForm") LoginForm form ){
+    public String loginForm(@ModelAttribute("loginForm") LoginForm form) {
         return "login/loginForm";
     }
 
     //@PostMapping("login")
-    public String login(@Validated @ModelAttribute LoginForm form , BindingResult bindingResult , HttpServletResponse response){
-        if(bindingResult.hasErrors()){
+    public String login(@Validated @ModelAttribute LoginForm form, BindingResult bindingResult, HttpServletResponse response) {
+        if (bindingResult.hasErrors()) {
             log.info("errors={}", bindingResult);
             return "login/loginForm";
         }
 
         Member loginMember = loginService.login(form.getLoginId(), form.getPassword());
 
-        if(loginMember == null){
-            bindingResult.reject("loginFail" , "아이디 또는 비밀번호가 틀립니다.");
+        if (loginMember == null) {
+            bindingResult.reject("loginFail", "아이디 또는 비밀번호가 틀립니다.");
             return "login/loginForm";
         }
         //login success
@@ -54,74 +55,97 @@ public class LoginController {
     }
 
     //@PostMapping("login")
-    public String loginV2(@Validated @ModelAttribute LoginForm form , BindingResult bindingResult , HttpServletResponse response){
-        if(bindingResult.hasErrors()){
+    public String loginV2(@Validated @ModelAttribute LoginForm form, BindingResult bindingResult, HttpServletResponse response) {
+        if (bindingResult.hasErrors()) {
             log.info("errors={}", bindingResult);
             return "login/loginForm";
         }
 
         Member loginMember = loginService.login(form.getLoginId(), form.getPassword());
 
-        if(loginMember == null){
-            bindingResult.reject("loginFail" , "아이디 또는 비밀번호가 틀립니다.");
+        if (loginMember == null) {
+            bindingResult.reject("loginFail", "아이디 또는 비밀번호가 틀립니다.");
             return "login/loginForm";
         }
         //login success
 
-        sessionManager.createSession(loginMember , response);
+        sessionManager.createSession(loginMember, response);
         return "redirect:/";
 
     }
 
-    @PostMapping("login")
-    public String loginV3(@Validated @ModelAttribute LoginForm form , BindingResult bindingResult , HttpServletRequest request){
-        if(bindingResult.hasErrors()){
+    //@PostMapping("login")
+    public String loginV3(@Validated @ModelAttribute LoginForm form, BindingResult bindingResult, HttpServletRequest request) {
+        if (bindingResult.hasErrors()) {
             log.info("errors={}", bindingResult);
             return "login/loginForm";
         }
 
         Member loginMember = loginService.login(form.getLoginId(), form.getPassword());
 
-        if(loginMember == null){
-            bindingResult.reject("loginFail" , "아이디 또는 비밀번호가 틀립니다.");
+        if (loginMember == null) {
+            bindingResult.reject("loginFail", "아이디 또는 비밀번호가 틀립니다.");
             return "login/loginForm";
         }
         //login success
         HttpSession session = request.getSession(true);
-        session.setAttribute(SessionConst.LOGIN_MEMBER , loginMember);
+        session.setAttribute(SessionConst.LOGIN_MEMBER, loginMember);
 
         //sessionManager.createSession(loginMember , response);
         return "redirect:/";
 
     }
 
+    @PostMapping("login")
+    public String loginV4(@Validated @ModelAttribute LoginForm form, BindingResult bindingResult,
+                          @RequestParam(defaultValue = "/") String redirectURL,
+                          HttpServletRequest request) {
+        if (bindingResult.hasErrors()) {
+            log.info("errors={}", bindingResult);
+            return "login/loginForm";
+        }
+
+        Member loginMember = loginService.login(form.getLoginId(), form.getPassword());
+
+        if (loginMember == null) {
+            bindingResult.reject("loginFail", "아이디 또는 비밀번호가 틀립니다.");
+            return "login/loginForm";
+        }
+        //login success
+        HttpSession session = request.getSession(true);
+        session.setAttribute(SessionConst.LOGIN_MEMBER, loginMember);
+
+        //sessionManager.createSession(loginMember , response);
+        return "redirect:" + redirectURL;
+
+    }
+
+
     //@PostMapping("logout")
-    public String logout(HttpServletResponse response){
-        expireCookie(response ,"memberId");
+    public String logout(HttpServletResponse response) {
+        expireCookie(response, "memberId");
         return "redirect:/";
     }
 
 
     //@PostMapping("logout")
-    public String logoutV2(HttpServletRequest request){
+    public String logoutV2(HttpServletRequest request) {
         sessionManager.expire(request);
         return "redirect:/";
     }
 
     @PostMapping("logout")
-    public String logoutV3(HttpServletRequest request){
+    public String logoutV3(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
-        if(session != null){
+        if (session != null) {
             session.invalidate();
         }
         return "redirect:/";
     }
 
 
-
-
-    private static void expireCookie(HttpServletResponse response , String cookieName) {
-        Cookie cookie = new Cookie(cookieName , null);
+    private static void expireCookie(HttpServletResponse response, String cookieName) {
+        Cookie cookie = new Cookie(cookieName, null);
         cookie.setMaxAge(0);
         response.addCookie(cookie);
     }
